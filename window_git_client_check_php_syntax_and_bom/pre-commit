@@ -1,0 +1,29 @@
+#!/bin/sh
+changed_files=`git diff-index --cached --name-only HEAD --`
+hasbom=0
+hassyntax=0
+for f in $changed_files ;do
+    ext=${f##*.}
+	if test -e "$f";then
+		if grep -q $'^\xEF\xBB\xBF' $f; then
+			echo "$f BOM header exists"
+			hasbom=1
+		fi
+	fi
+    if test "$ext" = "php" ;then
+        if test -e "$f";then
+            ERROR=$(php -l $f)
+			if [ $? -ne 0 ]; then
+                echo $ERROR
+                hassyntax=1
+            fi
+        fi
+    fi
+done
+if [ $hasbom -ne 0 ]; then
+	exit 1
+fi
+if [ $hassyntax -ne 0 ]; then
+	exit 1
+fi
+exit 0
